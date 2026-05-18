@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--color-background-tertiary,#f4f3ef);color:var(--color-text-primary,#1a1a1a);font-size:14px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:200px;min-width:200px;background:var(--color-background-primary,#fff);border-right:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.12));padding:16px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:8px 16px 20px;font-size:13px;font-weight:500;color:var(--color-text-secondary,#666);text-transform:uppercase;letter-spacing:0.08em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--color-text-secondary,#666);border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{background:var(--color-background-secondary,#f7f6f2);color:var(--color-text-primary,#1a1a1a)}
+.nav-item.active{background:var(--color-background-secondary,#f7f6f2);color:#185FA5;border-left:2px solid #185FA5;font-weight:500}
+.nav-item i{font-size:16px}
+.main{flex:1;padding:20px;overflow:hidden}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:18px;font-weight:500;margin-bottom:4px;color:var(--color-text-primary)}
+.page-sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--color-background-secondary,#f7f6f2);border-radius:8px;padding:14px;border:0.5px solid var(--color-border-tertiary)}
+.card-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px}
+.card-value{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.card-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.section{background:var(--color-background-primary,#fff);border-radius:10px;border:0.5px solid var(--color-border-tertiary);padding:16px;margin-bottom:16px}
+.section-title{font-size:14px;font-weight:500;margin-bottom:14px;color:var(--color-text-primary);display:flex;align-items:center;gap:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 10px;color:var(--color-text-secondary);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:0.5px solid var(--color-border-tertiary)}
+td{padding:9px 10px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.07))}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--color-background-secondary,#f7f6f2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-blue{background:#E6F1FB;color:#185FA5}
+.score-bar{height:6px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-right:6px}
+.score-fill{height:100%;border-radius:3px;background:#185FA5}
+.btn{padding:7px 14px;border-radius:7px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.25));background:var(--color-background-primary);cursor:pointer;font-size:13px;color:var(--color-text-primary);font-family:inherit;transition:all .15s}
+.btn:hover{background:var(--color-background-secondary)}
+.btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn-primary:hover{background:#0C447C}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.alert-red{background:#FCEBEB;color:#A32D2D;border:0.5px solid #F7C1C1}
+.alert-amber{background:#FAEEDA;color:#854F0B;border:0.5px solid #FAC775}
+.alert-green{background:#EAF3DE;color:#3B6D11;border:0.5px solid #C0DD97}
+.star{color:#EF9F27}
+.rank1{background:linear-gradient(90deg,#E6F1FB 0%,transparent 100%);border-left:3px solid #185FA5}
+input,select{font-family:inherit;font-size:13px;padding:7px 10px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.25));border-radius:7px;background:var(--color-background-primary);color:var(--color-text-primary);width:100%}
+label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;display:block}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.trend-up{color:#3B6D11}<br>.trend-down{color:#A32D2D}
+.pareto-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pareto-label{width:120px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pareto-track{flex:1;height:10px;background:var(--color-background-secondary);border-radius:5px;overflow:hidden}
+.pareto-fill{height:100%;border-radius:5px;background:#185FA5}
+.pareto-val{width:50px;text-align:right;font-size:12px;font-weight:500}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:0}
+.tab{padding:8px 14px;font-size:13px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.tab.active{color:#185FA5;border-bottom:2px solid #185FA5;font-weight:500}
+.forecast-bar{display:flex;align-items:flex-end;gap:4px;height:100px}
+.f-bar{flex:1;border-radius:4px 4px 0 0;background:#B5D4F4;position:relative}
+.f-bar.predicted{background:#185FA5;opacity:0.7}
+.f-bar-label{font-size:10px;text-align:center;margin-top:4px;color:var(--color-text-secondary)}
+.chartbox{position:relative;width:100%;height:220px}
+</style>
+</head>
+<body>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
+<div class="app">
+<div class="sidebar">
+  <div class="sidebar-logo"><i class="ti ti-tool"></i> Tool Procure</div>
+  <div class="nav-item active" onclick="showPage('supplier')"><i class="ti ti-building-store"></i> Supplier Engine</div>
+  <div class="nav-item" onclick="showPage('rfq')"><i class="ti ti-receipt"></i> RFQ Analysis</div>
+  <div class="nav-item" onclick="showPage('inventory')"><i class="ti ti-box"></i> Inventory Tracker</div>
+  <div class="nav-item" onclick="showPage('toollife')"><i class="ti ti-chart-line"></i> Tool Life</div>
+  <div class="nav-item" onclick="showPage('spend')"><i class="ti ti-coin"></i> Spend Analytics</div>
+  <div class="nav-item" onclick="showPage('scorecard')"><i class="ti ti-star"></i> Vendor Scorecard</div>
+  <div class="nav-item" onclick="showPage('forecast')"><i class="ti ti-trending-up"></i> Forecasting</div>
+</div>
+<div class="main">
+
+<!-- SUPPLIER COMPARISON -->
+<div id="page-supplier" class="page active">
+  <div class="page-title">Supplier Comparison Engine</div>
+  <div class="page-sub">Weighted scoring model to rank vendors across price, lead time, quality & delivery</div>
+  <div class="cards">
+    <div class="card"><div class="card-label">Active Suppliers</div><div class="card-value">6</div><div class="card-sub">Carbide & HSS tools</div></div>
+    <div class="card"><div class="card-label">Best Score</div><div class="card-value">87.4</div><div class="card-sub">Sandvik Coromant</div></div>
+    <div class="card"><div class="card-label">Avg Lead Time</div><div class="card-value">9.2d</div><div class="card-sub">Across all vendors</div></div>
+    <div class="card"><div class="card-label">Savings Potential</div><div class="card-value">₹1.8L</div><div class="card-sub">vs current vendor</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i> Scoring Weights</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+      <div><label>Price (wt: 30%)</label><input type="range" min="10" max="50" value="30" oninput="updateWeights()" id="w-price" style="width:120px"><span id="wv-price" style="font-size:12px;color:var(--color-text-secondary);margin-left:6px">30%</span></div>
+      <div><label>Lead Time (wt: 25%)</label><input type="range" min="10" max="40" value="25" oninput="updateWeights()" id="w-lead" style="width:120px"><span id="wv-lead" style="font-size:12px;color:var(--color-text-secondary);margin-left:6px">25%</span></div>
+      <div><label>Quality (wt: 25%)</label><input type="range" min="10" max="40" value="25" oninput="updateWeights()" id="w-qual" style="width:120px"><span id="wv-qual" style="font-size:12px;color:var(--color-text-secondary);margin-left:6px">25%</span></div>
+      <div><label>Delivery (wt: 20%)</label><input type="range" min="5" max="30" value="20" oninput="updateWeights()" id="w-del" style="width:120px"><span id="wv-del" style="font-size:12px;color:var(--color-text-secondary);margin-left:6px">20%</span></div>
+    </div>
+    <table id="supplier-table">
+      <thead><tr><th>Rank</th><th>Supplier</th><th>Price/Unit</th><th>Lead Time</th><th>MOQ</th><th>Quality</th><th>Delivery %</th><th>Score</th><th>Status</th></tr></thead>
+      <tbody id="supplier-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RFQ ANALYSIS -->
+<div id="page-rfq" class="page">
+  <div class="page-title">RFQ Analysis Dashboard</div>
+  <div class="page-sub">Input quotations and auto-identify best-value supplier with cost variance analysis</div>
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="section">
+      <div class="section-title"><i class="ti ti-file-invoice" aria-hidden="true"></i> Quotation Input</div>
+      <div id="rfq-inputs">
+        <div class="rfq-row" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;font-size:11px;color:var(--color-text-secondary);padding:0 2px">
+          <span>Supplier</span><span>Unit Price (₹)</span><span>Lead Time (d)</span><span>Quality Score</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="analyzeRFQ()" style="margin-top:8px;width:100%">Analyze Quotations ↗</button>
+    </div>
+    <div class="section">
+      <div class="section-title"><i class="ti ti-trophy" aria-hidden="true"></i> Best Value Recommendation</div>
+      <div id="rfq-result">
+        <div style="color:var(--color-text-secondary);font-size:13px;padding:20px 0 10px;text-align:center"><i class="ti ti-click" style="font-size:24px;display:block;margin-bottom:6px"></i>Click analyze to see recommendation</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-chart-bar" aria-hidden="true"></i> Cost Variance Analysis</div>
+    <div class="chartbox"><canvas id="rfqChart" role="img" aria-label="Bar chart showing quoted price per unit by supplier">RFQ price comparison chart</canvas></div>
+  </div>
+</div>
+
+<!-- INVENTORY -->
+<div id="page-inventory" class="page">
+  <div class="page-title">Tool Inventory Tracker</div>
+  <div class="page-sub">Real-time stock levels, reorder alerts, safety stock, and consumption trends</div>
+  <div style="margin-bottom:12px">
+    <div class="alert alert-red"><i class="ti ti-alert-circle"></i><b>2 items below reorder point</b> — Carbide Inserts TNMG & Drill Bits HSS 10mm need immediate PO</div>
+    <div class="alert alert-amber"><i class="ti ti-clock"></i><b>1 item approaching reorder</b> — End Mill 12mm flat reaching safety stock in ~5 days</div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-packages" aria-hidden="true"></i> Current Stock Status</div>
+    <table>
+      <thead><tr><th>Tool Description</th><th>Category</th><th>Stock (pcs)</th><th>Safety Stock</th><th>Reorder Point</th><th>Monthly Usage</th><th>Days Remaining</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Carbide Insert TNMG 160408</td><td>Turning</td><td>48</td><td>80</td><td>120</td><td>200</td><td>7</td><td><span class="badge badge-red">Reorder Now</span></td></tr>
+        <tr><td>HSS Drill Bit 10mm</td><td>Drilling</td><td>12</td><td>20</td><td>35</td><td>45</td><td>8</td><td><span class="badge badge-red">Reorder Now</span></td></tr>
+        <tr><td>End Mill 12mm Flat 4F</td><td>Milling</td><td>22</td><td>15</td><td>25</td><td>30</td><td>22</td><td><span class="badge badge-amber">Low Stock</span></td></tr>
+        <tr><td>Carbide Insert CCMT 09T308</td><td>Turning</td><td>340</td><td>100</td><td>180</td><td>250</td><td>41</td><td><span class="badge badge-green">OK</span></td></tr>
+        <tr><td>Cutting Fluid (20L drum)</td><td>Consumable</td><td>8</td><td>4</td><td>6</td><td>7</td><td>34</td><td><span class="badge badge-green">OK</span></td></tr>
+        <tr><td>CNC Boring Bar 20mm</td><td>Boring</td><td>6</td><td>2</td><td>4</td><td>3</td><td>60</td><td><span class="badge badge-green">OK</span></td></tr>
+        <tr><td>Thread Mill M8</td><td>Threading</td><td>18</td><td>10</td><td>16</td><td>20</td><td>27</td><td><span class="badge badge-green">OK</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-trending-up" aria-hidden="true"></i> Monthly Consumption Trend — Carbide Inserts</div>
+    <div class="chartbox"><canvas id="invChart" role="img" aria-label="Line chart of monthly carbide insert consumption">Monthly consumption data</canvas></div>
+  </div>
+</div>
+
+<!-- TOOL LIFE -->
+<div id="page-toollife" class="page">
+  <div class="page-title">Tool Life Monitoring</div>
+  <div class="page-sub">Expected vs actual tool life, cost-per-part analysis, and replacement recommendations</div>
+  <div class="cards">
+    <div class="card"><div class="card-label">Tools Monitored</div><div class="card-value">8</div></div>
+    <div class="card"><div class="card-label">Avg Life Utilization</div><div class="card-value">84%</div></div>
+    <div class="card"><div class="card-label">Best Cost/Part</div><div class="card-value">₹2.10</div><div class="card-sub">CCMT Insert</div></div>
+    <div class="card"><div class="card-label">Overdue Replacement</div><div class="card-value">2</div><div class="card-sub">tools</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tool" aria-hidden="true"></i> Tool Life vs Cost Analysis</div>
+    <table>
+      <thead><tr><th>Tool</th><th>Expected Life (pcs)</th><th>Actual Life (pcs)</th><th>Utilization</th><th>Tool Cost (₹)</th><th>Cost / Part (₹)</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr><td>TNMG Carbide Insert</td><td>450</td><td>380</td><td><div class="score-bar"><div class="score-fill" style="width:84%;background:#185FA5"></div></div>84%</td><td>120</td><td>3.16</td><td><span class="badge badge-amber">Monitor</span></td></tr>
+        <tr><td>CCMT Insert Grade H13A</td><td>600</td><td>612</td><td><div class="score-bar"><div class="score-fill" style="width:100%;background:#3B6D11"></div></div>102%</td><td>130</td><td>2.10</td><td><span class="badge badge-green">Excellent</span></td></tr>
+        <tr><td>HSS Drill 10mm</td><td>500</td><td>280</td><td><div class="score-bar"><div class="score-fill" style="width:56%;background:#A32D2D"></div></div>56%</td><td>85</td><td>11.60</td><td><span class="badge badge-red">Replace & Review</span></td></tr>
+        <tr><td>End Mill 12mm 4F</td><td>300</td><td>310</td><td><div class="score-bar"><div class="score-fill" style="width:100%;background:#3B6D11"></div></div>103%</td><td>480</td><td>15.40</td><td><span class="badge badge-green">Good</span></td></tr>
+        <tr><td>Boring Bar 20mm</td><td>800</td><td>920</td><td><div class="score-bar"><div class="score-fill" style="width:100%;background:#3B6D11"></div></div>115%</td><td>2200</td><td>2.39</td><td><span class="badge badge-green">Excellent</span></td></tr>
+        <tr><td>Thread Mill M8</td><td>200</td><td>142</td><td><div class="score-bar"><div class="score-fill" style="width:71%;background:#EF9F27"></div></div>71%</td><td>650</td><td>18.30</td><td><span class="badge badge-red">Replace Now</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-chart-dots" aria-hidden="true"></i> Cost Per Part Comparison</div>
+    <div class="chartbox"><canvas id="toolChart" role="img" aria-label="Bar chart showing cost per part for each tool">Tool cost per part</canvas></div>
+  </div>
+</div>
+
+<!-- SPEND ANALYTICS -->
+<div id="page-spend" class="page">
+  <div class="page-title">Spend Analytics</div>
+  <div class="page-sub">Monthly procurement spend, Pareto analysis, and cost-saving opportunities</div>
+  <div class="cards">
+    <div class="card"><div class="card-label">YTD Spend</div><div class="card-value">₹48.2L</div></div>
+    <div class="card"><div class="card-label">This Month</div><div class="card-value">₹6.4L</div><div class="card-sub" style="color:#3B6D11">↓ 8% vs last month</div></div>
+    <div class="card"><div class="card-label">Top Category</div><div class="card-value">Inserts</div><div class="card-sub">38% of spend</div></div>
+    <div class="card"><div class="card-label">Savings Identified</div><div class="card-value">₹3.1L</div><div class="card-sub">via consolidation</div></div>
+  </div>
+  <div class="grid2">
+    <div class="section">
+      <div class="section-title"><i class="ti ti-chart-area" aria-hidden="true"></i> Monthly Spend Trend</div>
+      <div style="position:relative;width:100%;height:200px"><canvas id="spendChart" role="img" aria-label="Line chart of monthly procurement spend">Monthly spend data</canvas></div>
+    </div>
+    <div class="section">
+      <div class="section-title"><i class="ti ti-chart-donut" aria-hidden="true"></i> Spend by Category</div>
+      <div style="position:relative;width:100%;height:200px"><canvas id="catChart" role="img" aria-label="Donut chart of spend by category">Category spend</canvas></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-arrow-bar-up" aria-hidden="true"></i> Pareto Analysis — Top 20% vendors = 80% spend</div>
+    <div id="pareto-bars" style="padding:4px 0"></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-bulb" aria-hidden="true"></i> Cost-Saving Opportunities</div>
+    <table>
+      <thead><tr><th>Opportunity</th><th>Category</th><th>Potential Saving</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>Consolidate 3 insert suppliers → 1</td><td>Carbide Inserts</td><td>₹1.2L/yr</td><td><span class="badge badge-blue">Negotiate Volume Discount</span></td></tr>
+        <tr><td>Switch HSS drills to carbide</td><td>Drilling Tools</td><td>₹0.6L/yr</td><td><span class="badge badge-blue">TCO Analysis Needed</span></td></tr>
+        <tr><td>Annual contract for cutting fluid</td><td>Consumables</td><td>₹0.45L/yr</td><td><span class="badge badge-blue">RFQ in Q2</span></td></tr>
+        <tr><td>Reduce emergency POs (currently 18%)</td><td>All Categories</td><td>₹0.85L/yr</td><td><span class="badge badge-amber">Improve Forecasting</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCORECARD -->
+<div id="page-scorecard" class="page">
+  <div class="page-title">Vendor Performance Scorecard</div>
+  <div class="page-sub">On-time delivery, defect rate, responsiveness — overall supplier rating</div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-award" aria-hidden="true"></i> Supplier Ratings</div>
+    <table>
+      <thead><tr><th>Supplier</th><th>On-Time Del %</th><th>Defect Rate</th><th>Response Time</th><th>Price Stability</th><th>Overall Rating</th><th>Grade</th></tr></thead>
+      <tbody>
+        <tr class="rank1"><td><b>Sandvik Coromant</b></td><td>97%</td><td>0.2%</td><td>2h</td><td>High</td><td><span class="star">★★★★★</span> 4.8</td><td><span class="badge badge-green">A+</span></td></tr>
+        <tr><td>Kennametal India</td><td>94%</td><td>0.5%</td><td>4h</td><td>High</td><td><span class="star">★★★★</span>☆ 4.2</td><td><span class="badge badge-green">A</span></td></tr>
+        <tr><td>TaeguTec India</td><td>91%</td><td>0.8%</td><td>6h</td><td>Medium</td><td><span class="star">★★★★</span>☆ 3.9</td><td><span class="badge badge-green">B+</span></td></tr>
+        <tr><td>Emuge-Franken</td><td>89%</td><td>1.1%</td><td>8h</td><td>Medium</td><td><span class="star">★★★</span>☆☆ 3.5</td><td><span class="badge badge-amber">B</span></td></tr>
+        <tr><td>Local Vendor A</td><td>78%</td><td>3.2%</td><td>24h</td><td>Low</td><td><span class="star">★★</span>☆☆☆ 2.4</td><td><span class="badge badge-red">C</span></td></tr>
+        <tr><td>Local Vendor B</td><td>82%</td><td>2.8%</td><td>12h</td><td>Low</td><td><span class="star">★★★</span>☆☆ 2.9</td><td><span class="badge badge-amber">C+</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-chart-radar" aria-hidden="true"></i> Top Supplier Scorecard — Sandvik Coromant</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>On-time delivery</span><span style="font-weight:500">97%</span></div>
+          <div style="height:8px;background:var(--color-background-secondary);border-radius:4px"><div style="width:97%;height:100%;background:#185FA5;border-radius:4px"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Quality acceptance rate</span><span style="font-weight:500">99.8%</span></div>
+          <div style="height:8px;background:var(--color-background-secondary);border-radius:4px"><div style="width:99%;height:100%;background:#3B6D11;border-radius:4px"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Response time score</span><span style="font-weight:500">95%</span></div>
+          <div style="height:8px;background:var(--color-background-secondary);border-radius:4px"><div style="width:95%;height:100%;background:#854F0B;border-radius:4px"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Price competitiveness</span><span style="font-weight:500">82%</span></div>
+          <div style="height:8px;background:var(--color-background-secondary);border-radius:4px"><div style="width:82%;height:100%;background:#533AB7;border-radius:4px"></div></div>
+        </div>
+      </div>
+      <div style="background:var(--color-background-secondary);border-radius:8px;padding:14px">
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Quarterly Performance</div>
+        <div style="font-size:28px;font-weight:500;color:#185FA5;margin-bottom:4px">4.8 / 5.0</div>
+        <div style="font-size:12px;color:#3B6D11;margin-bottom:12px">▲ +0.2 vs last quarter</div>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Recommended for <b>strategic partnership</b>. Eligible for preferred vendor status.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FORECAST -->
+<div id="page-forecast" class="page">
+  <div class="page-title">Demand Forecasting Module</div>
+  <div class="page-sub">Predict future tool demand using moving averages and consumption trends</div>
+  <div class="cards">
+    <div class="card"><div class="card-label">Next Month Forecast</div><div class="card-value">248 pcs</div><div class="card-sub">Carbide Inserts</div></div>
+    <div class="card"><div class="card-label">Forecast Accuracy</div><div class="card-value">91%</div><div class="card-sub">3-month MAPE</div></div>
+    <div class="card"><div class="card-label">Budget Required</div><div class="card-value">₹2.1L</div><div class="card-sub">Next quarter</div></div>
+    <div class="card"><div class="card-label">Lead Time Buffer</div><div class="card-value">12 days</div><div class="card-sub">Recommended</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-chart-line" aria-hidden="true"></i> Historical + Forecasted Demand</div>
+    <div class="chartbox" style="height:240px"><canvas id="forecastChart" role="img" aria-label="Line chart showing historical and forecasted tool demand">Forecast chart</canvas></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-calendar-stats" aria-hidden="true"></i> 3-Month Procurement Plan</div>
+    <table>
+      <thead><tr><th>Tool</th><th>Jun Forecast</th><th>Jul Forecast</th><th>Aug Forecast</th><th>Method</th><th>Confidence</th></tr></thead>
+      <tbody>
+        <tr><td>Carbide Insert TNMG</td><td>210 pcs</td><td>225 pcs</td><td>218 pcs</td><td>3-MMA</td><td><span class="badge badge-green">High 92%</span></td></tr>
+        <tr><td>HSS Drill 10mm</td><td>48 pcs</td><td>52 pcs</td><td>50 pcs</td><td>3-MMA</td><td><span class="badge badge-green">High 88%</span></td></tr>
+        <tr><td>End Mill 12mm</td><td>28 pcs</td><td>32 pcs</td><td>30 pcs</td><td>Trend</td><td><span class="badge badge-amber">Med 74%</span></td></tr>
+        <tr><td>Cutting Fluid 20L</td><td>7 drums</td><td>7 drums</td><td>8 drums</td><td>Seasonal</td><td><span class="badge badge-green">High 90%</span></td></tr>
+        <tr><td>Thread Mill M8</td><td>18 pcs</td><td>20 pcs</td><td>19 pcs</td><td>3-MMA</td><td><span class="badge badge-amber">Med 71%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+const suppliers=[
+  {name:'Sandvik Coromant',price:128,lead:5,moq:50,quality:9.5,delivery:97},
+  {name:'Kennametal India',price:112,lead:7,moq:100,quality:8.8,delivery:94},
+  {name:'TaeguTec India',price:98,lead:8,moq:75,quality:8.2,delivery:91},
+  {name:'Emuge-Franken',price:145,lead:12,moq:50,quality:9.0,delivery:89},
+  {name:'Iscar India',price:118,lead:6,moq:100,quality:9.1,delivery:95},
+  {name:'Local Vendor A',price:72,lead:3,moq:200,quality:6.2,delivery:78}
+];
+
+function normalize(arr){const mx=Math.max(...arr),mn=Math.min(...arr);return arr.map(v=>mx===mn?100:(v-mn)/(mx-mn)*100)}
+
+function scoreSuppliers(wp,wl,wq,wd){
+  const prices=normalize(suppliers.map(s=>s.price)).map(v=>100-v);
+  const leads=normalize(suppliers.map(s=>s.lead)).map(v=>100-v);
+  const quals=normalize(suppliers.map(s=>s.quality));
+  const dels=normalize(suppliers.map(s=>s.delivery));
+  return suppliers.map((s,i)=>({...s,score:+(prices[i]*wp/100+leads[i]*wl/100+quals[i]*wq/100+dels[i]*wd/100).toFixed(1)})).sort((a,b)=>b.score-a.score);
+}
+
+function updateWeights(){
+  const wp=+document.getElementById('w-price').value;
+  const wl=+document.getElementById('w-lead').value;
+  const wq=+document.getElementById('w-qual').value;
+  const wd=+document.getElementById('w-del').value;
+  document.getElementById('wv-price').textContent=wp+'%';
+  document.getElementById('wv-lead').textContent=wl+'%';
+  document.getElementById('wv-qual').textContent=wq+'%';
+  document.getElementById('wv-del').textContent=wd+'%';
+  renderSuppliers(scoreSuppliers(wp,wl,wq,wd));
+}
+
+function renderSuppliers(scored){
+  const tbody=document.getElementById('supplier-body');
+  tbody.innerHTML=scored.map((s,i)=>`<tr style="${i===0?'background:#E6F1FB':''}">
+    <td><b>${i+1}</b></td>
+    <td>${i===0?'<b>':''}${s.name}${i===0?'</b>':''}</td>
+    <td>₹${s.price}</td>
+    <td>${s.lead}d</td>
+    <td>${s.moq} pcs</td>
+    <td>${s.quality}/10</td>
+    <td>${s.delivery}%</td>
+    <td><div class="score-bar"><div class="score-fill" style="width:${s.score}%"></div></div>${s.score}</td>
+    <td>${i===0?'<span class="badge badge-green">Recommended</span>':i<3?'<span class="badge badge-blue">Shortlisted</span>':'<span class="badge" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Review</span>'}</td>
+  </tr>`).join('');
+}
+
+updateWeights();
+
+const rfqData=[
+  {name:'Sandvik Coromant',price:128,lead:5,qual:9.5},
+  {name:'Kennametal India',price:112,lead:7,qual:8.8},
+  {name:'TaeguTec India',price:98,lead:8,qual:8.2},
+  {name:'Local Vendor A',price:72,lead:3,qual:6.2}
+];
+
+function buildRFQInputs(){
+  const c=document.getElementById('rfq-inputs');
+  rfqData.forEach((r,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center';
+    row.innerHTML=`<div style="font-size:13px;font-weight:500">${r.name}</div>
+      <input type="number" value="${r.price}" id="rfq-p-${i}" style="padding:6px 8px">
+      <input type="number" value="${r.lead}" id="rfq-l-${i}" style="padding:6px 8px">
+      <input type="number" value="${r.qual}" step="0.1" min="1" max="10" id="rfq-q-${i}" style="padding:6px 8px">`;
+    c.appendChild(row);
+  });
+}
+buildRFQInputs();
+
+let rfqChart=null;
+function analyzeRFQ(){
+  const data=rfqData.map((r,i)=>({
+    name:r.name,
+    price:+document.getElementById('rfq-p-'+i).value||r.price,
+    lead:+document.getElementById('rfq-l-'+i).value||r.lead,
+    qual:+document.getElementById('rfq-q-'+i).value||r.qual
+  }));
+  const scores=data.map(d=>(100-d.price/2)+((10-d.lead)*5)+(d.qual*5));
+  const best=data[scores.indexOf(Math.max(...scores))];
+  const cheapest=data.reduce((a,b)=>a.price<b.price?a:b);
+  const res=document.getElementById('rfq-result');
+  res.innerHTML=`<div class="alert alert-green" style="margin-bottom:10px"><i class="ti ti-check"></i><div><b>Best Value: ${best.name}</b><br>₹${best.price}/unit · ${best.lead}d lead · ${best.qual}/10 quality</div></div>
+  <div class="alert alert-amber"><i class="ti ti-info-circle"></i><div><b>Lowest Price: ${cheapest.name}</b> @ ₹${cheapest.price}<br>Consider total cost of ownership before decision</div></div>
+  <div style="margin-top:12px;font-size:12px;color:var(--color-text-secondary)">Price variance: ₹${Math.max(...data.map(d=>d.price))-Math.min(...data.map(d=>d.price))} | Avg: ₹${Math.round(data.reduce((s,d)=>s+d.price,0)/data.length)}</div>`;
+  const labels=data.map(d=>d.name.split(' ')[0]);
+  const vals=data.map(d=>d.price);
+  const colors=data.map(d=>d.name===best.name?'#185FA5':'#B5D4F4');
+  if(rfqChart)rfqChart.destroy();
+  rfqChart=new Chart(document.getElementById('rfqChart'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Price per Unit (₹)',data:vals,backgroundColor:colors}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,min:Math.min(...vals)-20}}}
+  });
+}
+analyzeRFQ();
+
+new Chart(document.getElementById('invChart'),{
+  type:'line',
+  data:{labels:['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'],
+    datasets:[{label:'Consumption (pcs)',data:[185,210,195,230,220,205,215,200],borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0.3,pointBackgroundColor:'#185FA5'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById('toolChart'),{
+  type:'bar',
+  data:{labels:['TNMG','CCMT','HSS Drill','End Mill','Boring Bar','Thread Mill'],
+    datasets:[{label:'Cost/Part (₹)',data:[3.16,2.10,11.60,15.40,2.39,18.30],backgroundColor:['#185FA5','#3B6D11','#A32D2D','#854F0B','#3B6D11','#A32D2D']}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'₹ per part'}}}}
+});
+
+new Chart(document.getElementById('spendChart'),{
+  type:'line',
+  data:{labels:['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'],
+    datasets:[{label:'Monthly Spend (₹L)',data:[5.2,6.8,7.1,5.9,6.2,5.8,6.8,6.4],borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',fill:true,tension:0.4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'₹'+v+'L'}}}}
+});
+
+new Chart(document.getElementById('catChart'),{
+  type:'doughnut',
+  data:{labels:['Inserts 38%','End Mills 18%','Drills 14%','Consumables 16%','Boring 8%','Other 6%'],
+    datasets:[{data:[38,18,14,16,8,6],backgroundColor:['#185FA5','#3B6D11','#854F0B','#533AB7','#A32D2D','#73726c']}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10}}}}
+});
+
+const paretoData=[
+  {vendor:'Sandvik Coromant',spend:18.4,pct:38},
+  {vendor:'Kennametal',spend:10.6,pct:22},
+  {vendor:'TaeguTec',spend:7.2,pct:15},
+  {vendor:'Emuge-Franken',spend:5.8,pct:12},
+  {vendor:'Iscar India',spend:3.8,pct:8},
+  {vendor:'Local Vendors',spend:2.4,pct:5}
+];
+const pb=document.getElementById('pareto-bars');
+let cumPct=0;
+paretoData.forEach(p=>{
+  cumPct+=p.pct;
+  const is80=cumPct<=80;
+  pb.innerHTML+=`<div class="pareto-bar">
+    <div class="pareto-label" title="${p.vendor}">${p.vendor}</div>
+    <div class="pareto-track"><div class="pareto-fill" style="width:${p.pct*2.5}%;background:${is80?'#185FA5':'#B4B2A9'}"></div></div>
+    <div class="pareto-val">₹${p.spend}L</div>
+    <div style="width:35px;text-align:right;font-size:11px;color:${is80?'#185FA5':'var(--color-text-secondary)'}">${p.pct}%</div>
+  </div>`;
+});
+
+new Chart(document.getElementById('forecastChart'),{
+  type:'line',
+  data:{labels:['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun*','Jul*','Aug*'],
+    datasets:[
+      {label:'Actual',data:[185,210,195,230,220,205,215,200,null,null,null],borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0.3,pointBackgroundColor:'#185FA5'},
+      {label:'Forecast',data:[null,null,null,null,null,null,null,200,210,225,218],borderColor:'#3B6D11',borderDash:[5,5],tension:0.3,pointBackgroundColor:'#3B6D11',backgroundColor:'rgba(59,109,17,0.06)',fill:true}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:12},boxWidth:10}}},scales:{y:{beginAtZero:false,min:150}}}
+});
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const navMap={supplier:0,rfq:1,inventory:2,toollife:3,spend:4,scorecard:5,forecast:6};
+  document.querySelectorAll('.nav-item')[navMap[id]].classList.add('active');
+}
+</script>
+</body>
+</html>
